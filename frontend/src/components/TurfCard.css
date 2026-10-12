@@ -5,69 +5,129 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: all 0.25 ease;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .turf-card-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.07);
+  transform: translateY(-5px);
+  box-shadow: 0 16px 32px -6px rgba(15, 23, 42, 0.12);
   border-color: #cbd5e1;
 }
 
 .turf-card-item.selected-preview {
   border-color: #22c55e;
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25), 0 16px 32px -6px rgba(15, 23, 42, 0.12);
 }
 
 /* IMAGE & OVERLAYS */
 .turf-image-wrapper {
   position: relative;
   width: 100%;
-  height: 190px;
+  height: 210px;
   overflow: hidden;
-  background-color: #f1f5f9;
+  background-color: #0f172a;
 }
 
 .turf-card-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.4s ease;
+  transition: transform 0.5s ease;
 }
 
 .turf-card-item:hover .turf-card-img {
-  transform: scale(1.04);
+  transform: scale(1.06);
+}
+
+.turf-badge-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(8px);
+  color: #4ade80;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  z-index: 2;
 }
 
 .rating-overlay {
   position: absolute;
   top: 12px;
   right: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
   z-index: 2;
+}
+
+.review-count {
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 0.74rem;
+}
+
+.card-image-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  z-index: 3;
+}
+
+.dot-pill {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dot-pill.active {
+  width: 18px;
+  border-radius: 9999px;
+  background: #22c55e;
 }
 
 .favorite-btn {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  width: 34px;
-  height: 34px;
+  bottom: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(4px);
-  border: none;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 2;
+  z-index: 3;
   transition: all 0.2s ease;
 }
 
 .favorite-btn:hover {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(15, 23, 42, 0.95);
+  transform: scale(1.1);
 }
 
 .favorite-btn.fav-active {
@@ -82,46 +142,61 @@
   flex: 1;
 }
 
+.turf-card-header-row {
+  margin-bottom: 0.35rem;
+}
+
 .turf-card-title {
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 800;
   color: #0f172a;
-  margin-bottom: 0.35rem;
   letter-spacing: -0.01em;
+  line-height: 1.35;
 }
 
 .turf-card-location {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   font-size: 0.85rem;
   font-weight: 500;
   color: #64748b;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.65rem;
 }
 
 .pin-icon {
-  color: #94a3b8;
+  color: #ef4444;
   flex-shrink: 0;
 }
 
-.turf-card-price-row {
+.location-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.turf-card-timing {
   display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
-}
-
-.price-amount {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.price-unit {
-  font-size: 0.85rem;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: #64748b;
+  color: #475569;
+  background-color: #f8fafc;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  margin-bottom: 0.85rem;
+  border: 1px solid #f1f5f9;
+}
+
+.live-status-pill {
+  margin-left: auto;
+  color: #15803d;
+  background-color: #dcfce7;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
 }
 
 /* FACILITY TAGS */
@@ -129,61 +204,109 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.15rem;
 }
 
 .facility-tag-pill {
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  color: #475569;
+  color: #334155;
   background-color: #f1f5f9;
-  padding: 0.25rem 0.65rem;
-  border-radius: 9999px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
-/* ACTION BUTTON */
+.facility-more-pill {
+  background-color: transparent;
+  color: #64748b;
+  border: 1px dashed #cbd5e1;
+}
+
+/* FOOTER & BUTTONS */
+.turf-card-footer {
+  margin-top: auto;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.turf-card-price-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.price-val-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+
+.price-amount {
+  font-size: 1.28rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.price-unit {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
 .card-actions-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: auto;
+  gap: 0.45rem;
 }
 
-.view-details-pill-btn {
-  flex: 1;
-  background-color: #f0fdf4;
-  color: #16a34a;
-  border: 1px solid #bbf7d0;
-  border-radius: 9999px;
-  padding: 0.65rem 1rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-align: center;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.view-details-pill-btn:hover {
-  background-color: #16a34a;
-  color: #ffffff;
-  border-color: #16a34a;
-}
-
-.quick-select-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+.quick-preview-btn {
   background-color: #f8fafc;
+  color: #475569;
   border: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 12px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 0.9rem;
   transition: all 0.2s ease;
 }
 
-.quick-select-btn:hover {
-  background-color: #dcfce7;
-  border-color: #86efac;
+.quick-preview-btn:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.book-now-btn {
+  background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.25);
+  transition: all 0.2s ease;
+}
+
+.book-now-btn:hover {
+  background: linear-gradient(135deg, #166534 0%, #15803d 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(22, 163, 74, 0.35);
 }

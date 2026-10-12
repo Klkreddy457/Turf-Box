@@ -181,6 +181,50 @@ def seed_database():
             "opening_time": time(6, 0),
             "closing_time": time(22, 0),
             "is_active": True
+        },
+        {
+            "owner": owner_apex,
+            "name": "Ace Dinking Pickleball Arena",
+            "location": "Gachibowli",
+            "address": "Old Mumbai Highway, Near IIIT Junction, Gachibowli, Hyderabad",
+            "description": "Dedicated 4-court pickleball facility with USAPA-regulation cushioned acrylic courts. Includes paddle rentals, tournament lighting, beginner coaching clinic, and lounge.",
+            "price_per_hour": 850.00,
+            "opening_time": time(6, 0),
+            "closing_time": time(23, 0),
+            "is_active": True
+        },
+        {
+            "owner": owner_urban,
+            "name": "Camp Nou Floodlit Football Turf",
+            "location": "Koramangala",
+            "address": "80 Feet Road, 4th Block, Koramangala, Bengaluru",
+            "description": "Bengaluru's premier 7-a-side artificial football turf equipped with European infill, floodlights, spectator gallery, and post-game beverage lounge.",
+            "price_per_hour": 1600.00,
+            "opening_time": time(6, 0),
+            "closing_time": time(23, 30),
+            "is_active": True
+        },
+        {
+            "owner": owner_grandslam,
+            "name": "Eden Box Cricket Park",
+            "location": "Indiranagar",
+            "address": "100 Feet Road, HAL 2nd Stage, Indiranagar, Bengaluru",
+            "description": "Enclosed box cricket arena with high-bounce AstroTurf, automated bowling machine with swing variations, referee service, and digital broadcast screens.",
+            "price_per_hour": 1300.00,
+            "opening_time": time(6, 0),
+            "closing_time": time(23, 59),
+            "is_active": True
+        },
+        {
+            "owner": owner_apex,
+            "name": "Kickoff Sea-Breeze Football Turf",
+            "location": "Bandra West",
+            "address": "Carter Road Promenade, Bandra West, Mumbai",
+            "description": "Iconic sea-facing 5v5 football turf with all-weather non-abrasive turf carpet, high-powered LED floodlights, sound system, and energetic football community.",
+            "price_per_hour": 1800.00,
+            "opening_time": time(6, 0),
+            "closing_time": time(23, 30),
+            "is_active": True
         }
     ]
 
@@ -190,7 +234,7 @@ def seed_database():
         created_turfs.append(turf)
         print(f"   + Created Turf: {turf.name} ({turf.location}) - INR {turf.price_per_hour}/hr")
 
-    print(f"\n[OK] Successfully created {len(created_turfs)} real sports turfs across Football, Cricket, Badminton, Basketball, Tennis, Futsal, and Volleyball!")
+    print(f"\n[OK] Successfully created {len(created_turfs)} real sports turfs across Football, Cricket, Badminton, Basketball, Tennis, Futsal, Volleyball, and Pickleball!")
 
     print("\n" + "=" * 60)
     print("SEEDING COMPLETE! ACCOUNTS & REAL DATA READY")

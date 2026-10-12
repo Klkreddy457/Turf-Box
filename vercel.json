@@ -19,15 +19,15 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/api(.*)",
       "dest": "backend/config/wsgi.py"
     },
     {
-      "src": "/admin/(.*)",
+      "src": "/admin(.*)",
       "dest": "backend/config/wsgi.py"
     },
     {
-      "src": "/media/(.*)",
+      "src": "/media(.*)",
       "dest": "backend/config/wsgi.py"
     },
     {
@@ -41,6 +41,10 @@
     {
       "src": "/icons.svg",
       "dest": "/frontend/icons.svg"
+    },
+    {
+      "src": "/(.*\\.(?:ico|png|jpg|jpeg|svg|webp|json|js|css|woff|woff2|ttf|eot))",
+      "dest": "/frontend/$1"
     },
     {
       "handle": "filesystem"

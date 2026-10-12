@@ -45,6 +45,11 @@ SPORT_IMAGES = {
         "https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=1200&q=80",
         "https://images.unsplash.com/photo-1592656094267-764a45160876?w=1200&q=80",
         "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1200&q=80"
+    ],
+    "Pickleball": [
+        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80",
+        "https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?w=1200&q=80",
+        "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1200&q=80"
     ]
 }
 
@@ -64,6 +69,8 @@ def detect_sport(turf_name):
         return "Futsal"
     elif "volleyball" in name_lower:
         return "Volleyball"
+    elif "pickleball" in name_lower:
+        return "Pickleball"
     return "Football"
 
 def upload_images():

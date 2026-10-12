@@ -13,15 +13,16 @@ def api_root(request):
         "status": "online",
         "service": "TurfBox Backend API",
         "endpoints": {
-            "api": "/api/",
+            "turfs": "/api/turfs/",
+            "bookings": "/api/bookings/",
             "admin": "/admin/",
         }
     })
 
 
 urlpatterns = [
-    path('', api_root, name='api-root'),
     path('admin/', admin.site.urls),
+    path('api/', api_root, name='api-root'),
     path('api/', include('booking.urls')),
 ]
 

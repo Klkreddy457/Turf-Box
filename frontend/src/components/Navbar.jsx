@@ -5,7 +5,9 @@ import "./NavBar.css";
 function NavBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [selectedLocation, setSelectedLocation] = useState("Hyderabad");
+  const [selectedLocation, setSelectedLocation] = useState(
+    () => localStorage.getItem("turfbox_city") || "Hyderabad"
+  );
 
   const user = useMemo(() => {
     const userString = localStorage.getItem("user");
@@ -19,10 +21,17 @@ function NavBar() {
     return null;
   }, []);
 
+  function handleCityChange(city) {
+    setSelectedLocation(city);
+    localStorage.setItem("turfbox_city", city);
+    window.dispatchEvent(new CustomEvent("city_changed", { detail: city }));
+  }
+
   function handleLogout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/");
+    window.location.reload();
   }
 
   return (
@@ -40,7 +49,7 @@ function NavBar() {
             <span className="logo-title">
               Turf<span className="text-green">Box</span>
             </span>
-            <span className="logo-tagline">Play • Book • Repeat</span>
+            <span className="logo-tagline">Outside-World Arenas</span>
           </div>
         </Link>
 
@@ -56,7 +65,7 @@ function NavBar() {
             to="/turfs"
             className={`nav-item ${location.pathname === "/turfs" ? "active" : ""}`}
           >
-            Turfs
+            All Turfs
           </Link>
           {user && (
             <Link
@@ -66,31 +75,35 @@ function NavBar() {
               My Bookings
             </Link>
           )}
-          <Link
-            to="/about"
-            className={`nav-item ${location.pathname === "/about" ? "active" : ""}`}
-          >
-            About
-          </Link>
+          {user?.role === "owner" && (
+            <Link
+              to="/owner/dashboard"
+              className={`nav-item owner-nav-highlight ${location.pathname.startsWith("/owner") ? "active" : ""}`}
+            >
+              👑 Owner Portal
+            </Link>
+          )}
         </nav>
 
         {/* CONTROLS & AUTH */}
         <div className="nav-actions">
           {/* LOCATION SELECTOR */}
-          <div className="location-pill">
+          <div className="location-pill" title="Select City">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="location-icon">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
             <select
               value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
+              onChange={(e) => handleCityChange(e.target.value)}
               className="location-select"
             >
               <option value="Hyderabad">Hyderabad</option>
               <option value="Bengaluru">Bengaluru</option>
               <option value="Mumbai">Mumbai</option>
-              <option value="Delhi">Delhi</option>
+              <option value="Delhi">Delhi NCR</option>
+              <option value="Chennai">Chennai</option>
+              <option value="Pune">Pune</option>
             </select>
           </div>
 
@@ -115,7 +128,10 @@ function NavBar() {
                   alt="User Avatar"
                 />
               </div>
-              <span className="user-name">Hi, {user.name?.split(" ")[0] || "User"}</span>
+              <div className="user-details-col">
+                <span className="user-name">{user.name?.split(" ")[0] || "Player"}</span>
+                <span className="user-role-badge">{user.role || "Member"}</span>
+              </div>
               <button onClick={handleLogout} className="logout-btn" title="Logout">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
