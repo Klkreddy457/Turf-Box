@@ -1,10 +1,13 @@
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? "http://127.0.0.1:8000/api" : "/api");
 
 export function getMediaUrl(url) {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/media/")) return `http://127.0.0.1:8000${url}`;
-  if (url.startsWith("media/")) return `http://127.0.0.1:8000/${url}`;
+  const backendHost = import.meta.env.DEV ? "http://127.0.0.1:8000" : "";
+  if (url.startsWith("/media/")) return `${backendHost}${url}`;
+  if (url.startsWith("media/")) return `${backendHost}/${url}`;
   return url;
 }
 

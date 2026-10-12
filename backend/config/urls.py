@@ -5,18 +5,24 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 
+from django.http import JsonResponse
+
+
+def api_root(request):
+    return JsonResponse({
+        "status": "online",
+        "service": "TurfBox Backend API",
+        "endpoints": {
+            "api": "/api/",
+            "admin": "/admin/",
+        }
+    })
+
+
 urlpatterns = [
-
-    path(
-        'admin/',
-        admin.site.urls
-    ),
-
-    path(
-        'api/',
-        include('booking.urls')
-    ),
-
+    path('', api_root, name='api-root'),
+    path('admin/', admin.site.urls),
+    path('api/', include('booking.urls')),
 ]
 
 

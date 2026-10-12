@@ -31,9 +31,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-k51p&xhy8io)^8-!a%599nczr^+%bwt!(9o*p#9@o%qqvc^l5q')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
+is_vercel = os.getenv('VERCEL') == '1' or 'VERCEL_ENV' in os.environ
+default_debug = 'False' if is_vercel else 'True'
+DEBUG = os.getenv('DEBUG', default_debug).lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = ['*'] if DEBUG else [h.strip() for h in os.getenv('ALLOWED_HOSTS', '.vercel.app,localhost,127.0.0.1').split(',') if h.strip()]
+ALLOWED_HOSTS = ['*'] if DEBUG else [
+    h.strip() for h in os.getenv('ALLOWED_HOSTS', '.vercel.app,localhost,127.0.0.1').split(',') if h.strip()
+]
+if not DEBUG and '.vercel.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.vercel.app')
+
+csrf_trusted = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if csrf_trusted:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_trusted.split(',') if origin.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
 
 
 STATIC_URL = 'static/'
