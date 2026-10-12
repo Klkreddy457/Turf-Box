@@ -1,0 +1,98 @@
+.turfs-page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem 1.5rem;
+}
+
+.turfs-header-banner {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  border-radius: 24px;
+  padding: 3rem 2rem;
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 25px -5px rgba(22, 163, 74, 0.3);
+}
+
+.turfs-header-banner h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.turfs-header-banner p {
+  font-size: 1.05rem;
+  color: #dcfce7;
+  margin-bottom: 1.75rem;
+}
+
+.turfs-search-box {
+  max-width: 580px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.turfs-search-box input {
+  width: 100%;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.9rem 1.5rem;
+  font-size: 0.98rem;
+  color: #0f172a;
+  outline: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.results-count-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 1.25rem;
+}
+
+.turfs-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.no-turfs-placeholder {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .turfs-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .turfs-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
