@@ -1017,6 +1017,7 @@ def turf_availability(request, turf_id):
             'start_time': slot_start_time.strftime('%H:%M:%S'),
             'end_time': slot_end_time.strftime('%H:%M:%S'),
             'available': is_available,
+            'is_available': is_available,
             'is_booked': is_booked,
             'is_past': is_past,
         })

@@ -1,4 +1,4 @@
-import { DEFAULT_TURFS } from "../data/defaultTurfs";
+import { DEFAULT_TURFS } from "../data/defaultTurfs.js";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
@@ -107,32 +107,95 @@ export async function fetchTurfAvailability(turfId, dateStr) {
       signal: AbortSignal.timeout(4000),
     });
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      if (data && Array.isArray(data.slots) && data.slots.length > 0) {
+        return {
+          ...data,
+          slots: data.slots.map((s) => {
+            const avail =
+              s.available !== undefined
+                ? Boolean(s.available)
+                : s.is_available !== undefined
+                ? Boolean(s.is_available)
+                : !s.is_booked;
+            return {
+              ...s,
+              available: avail,
+              is_available: avail,
+              is_booked: s.is_booked !== undefined ? Boolean(s.is_booked) : !avail,
+              is_past: Boolean(s.is_past),
+            };
+          }),
+        };
+      }
     }
   } catch (err) {
     console.warn("API availability fetch failed, generating realistic slots:", err);
   }
 
-  // Generate realistic 30-minute slots between 06:00 and 23:30
-  const slots = [];
-  const startHour = 6;
-  const endHour = 23;
-  const bookedSlots = ["08:00", "08:30", "18:00", "18:30", "19:00", "20:00"];
+  // Graceful realistic slot generation based on turf operating hours and existing local bookings
+  const turf = DEFAULT_TURFS.find((t) => String(t.id) === String(turfId)) || DEFAULT_TURFS[0];
+  const openingStr = turf.opening_time || "06:00:00";
+  const closingStr = turf.closing_time || "23:59:00";
 
-  for (let h = startHour; h <= endHour; h++) {
-    for (const m of [0, 30]) {
-      const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-      const nextMinutes = m + 30;
-      const nextHour = nextMinutes === 60 ? h + 1 : h;
-      const nextTimeStr = `${String(nextHour).padStart(2, "0")}:${String(nextMinutes % 60).padStart(2, "0")}`;
-      
-      const isBooked = bookedSlots.includes(timeStr);
-      slots.push({
-        start_time: `${timeStr}:00`,
-        end_time: `${nextTimeStr}:00`,
-        is_available: !isBooked,
-      });
-    }
+  const [openH, openM] = openingStr.split(":").map(Number);
+  const [closeH, closeM] = closingStr.split(":").map(Number);
+  const openTotalMins = (openH || 6) * 60 + (openM || 0);
+  const closeTotalMins =
+    closeH === 0 && closeM === 0 ? 24 * 60 : (closeH || 23) * 60 + (closeM || 59);
+
+  // Check local bookings for this turf & date
+  const localBookings = getLocalBookings().filter(
+    (b) => String(b.turf_id) === String(turf.id) && b.booking_date === dateStr && b.status !== "CANCELLED"
+  );
+
+  // Time reference for past slots today
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate()
+  ).padStart(2, "0")}`;
+  const isToday = dateStr === todayStr;
+  const isPastDate = dateStr < todayStr;
+  const currentTotalMins = now.getHours() * 60 + now.getMinutes();
+
+  // Some realistic pre-booked slots for realistic simulation (e.g. peak evening slots)
+  const defaultBookedTimes = ["19:00", "20:00"];
+
+  const slots = [];
+  for (let m = openTotalMins; m + 30 <= closeTotalMins; m += 30) {
+    const slotStartH = Math.floor(m / 60);
+    const slotStartM = m % 60;
+    const slotEndH = Math.floor((m + 30) / 60);
+    const slotEndM = (m + 30) % 60;
+
+    const startTimeStr = `${String(slotStartH).padStart(2, "0")}:${String(slotStartM).padStart(2, "0")}:00`;
+    const endTimeStr = `${String(slotEndH).padStart(2, "0")}:${String(slotEndM).padStart(2, "0")}:00`;
+    const shortTimeStr = `${String(slotStartH).padStart(2, "0")}:${String(slotStartM).padStart(2, "0")}`;
+
+    // Past slot if past date, or if today and slot start is in the past
+    const isPast = isPastDate || (isToday && m <= currentTotalMins);
+
+    // Check if slot overlaps with any local booking
+    const isLocallyBooked = localBookings.some((b) => {
+      const [bStartH, bStartM] = b.start_time.split(":").map(Number);
+      const [bEndH, bEndM] = b.end_time.split(":").map(Number);
+      const bStart = bStartH * 60 + bStartM;
+      const bEnd = bEndH * 60 + bEndM;
+      return m < bEnd && m + 30 > bStart;
+    });
+
+    const isPresetBooked = !isPast && defaultBookedTimes.includes(shortTimeStr);
+    const isBooked = isLocallyBooked || isPresetBooked;
+    const isAvailable = !isPast && !isBooked;
+
+    slots.push({
+      start_time: startTimeStr,
+      end_time: endTimeStr,
+      available: isAvailable,
+      is_available: isAvailable,
+      is_booked: isBooked,
+      is_past: isPast,
+    });
   }
 
   return {
@@ -243,6 +306,7 @@ export async function createPaymentOrder(bookingId) {
   }
 
   return {
+    key_id: "rzp_test_1DP5mmOlF5G5ag",
     order_id: `order_sim_${Date.now()}`,
     amount: 150000,
     currency: "INR",

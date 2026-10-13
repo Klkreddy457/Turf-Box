@@ -79,10 +79,11 @@ function BookingPanel({ turf }) {
 
   // Helper: Check if a slot is in the past for the selected date
   const isSlotInPast = (slot) => {
-    if (slot.is_past) return true;
     const now = new Date();
     const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    if (selectedDateObj?.isoDate < todayLocal) return true;
     if (selectedDateObj?.isoDate === todayLocal) {
+      if (slot.is_past) return true;
       const [h, m] = slot.start_time.split(":").map(Number);
       const slotStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
       return slotStartTime <= now;
@@ -96,7 +97,7 @@ function BookingPanel({ turf }) {
     const [h, m] = slot.start_time.split(":").map(Number);
     const endMinutes = h * 60 + m + durationMins;
     const [closeH, closeM] = turf.closing_time.split(":").map(Number);
-    const closeMinutes = closeH * 60 + closeM;
+    const closeMinutes = (closeH === 0 && closeM === 0) ? 24 * 60 : closeH * 60 + closeM;
     return endMinutes > closeMinutes;
   };
 
@@ -108,7 +109,9 @@ function BookingPanel({ turf }) {
 
     for (let i = 0; i < requiredSlotCount; i++) {
       const targetSlot = slots[startIndex + i];
-      if (!targetSlot || !targetSlot.available) {
+      if (!targetSlot) return false;
+      const isTargetAvailable = Boolean(targetSlot.available ?? targetSlot.is_available);
+      if (!isTargetAvailable || targetSlot.is_booked) {
         return false;
       }
     }
@@ -147,9 +150,6 @@ function BookingPanel({ turf }) {
       // Slots exceeding closing time disappear
       if (doesSlotExceedClosing(slot, selectedDuration)) return false;
 
-      // Non-booked slots that do not have enough consecutive availability disappear
-      if (!slot.is_booked && !checkConsecutiveAvailability(slot, selectedDuration)) return false;
-
       // Period tab filter
       if (period !== "All") {
         const startHour = parseInt(slot.start_time.split(":")[0], 10);
@@ -172,7 +172,8 @@ function BookingPanel({ turf }) {
   };
 
   const handleSlotClick = (slot) => {
-    if (!slot.available) return;
+    const isAvail = Boolean(slot.available ?? slot.is_available);
+    if (!isAvail || slot.is_booked) return;
     const canBook = checkConsecutiveAvailability(slot, duration);
     if (!canBook) {
       setError(`Not enough consecutive slots available for ${duration} minutes.`);
@@ -417,9 +418,10 @@ function BookingPanel({ turf }) {
           <div className="time-slots-grid">
             {currentPeriodSlots.map((slot) => {
               const isSelectedBlock = isSlotInSelectedBlock(slot);
-              const isBooked = slot.is_booked;
+              const isBooked = Boolean(slot.is_booked);
+              const isAvail = Boolean(slot.available ?? slot.is_available);
               const hasEnoughSlots = checkConsecutiveAvailability(slot, duration);
-              const isSlotDisabled = !slot.available || !hasEnoughSlots;
+              const isSlotDisabled = !isAvail || isBooked || !hasEnoughSlots;
 
               let slotClass = "slot-btn available";
               if (isSlotDisabled) slotClass = "slot-btn booked";
@@ -432,12 +434,22 @@ function BookingPanel({ turf }) {
                   disabled={isSlotDisabled}
                   className={slotClass}
                   onClick={() => handleSlotClick(slot)}
+                  title={
+                    isBooked
+                      ? "This slot is already booked"
+                      : !hasEnoughSlots
+                      ? `Not enough consecutive slots for ${duration} mins`
+                      : "Available - click to select"
+                  }
                 >
                   <span className="slot-time-text">
                     {formatTimeStr(slot.start_time)} - {formatTimeStr(slot.end_time)}
                   </span>
                   {isSelectedBlock && <span className="slot-status-pill">Selected</span>}
                   {isBooked && <span className="slot-status-pill booked-text">Booked</span>}
+                  {!isBooked && !hasEnoughSlots && isAvail && (
+                    <span className="slot-status-pill booked-text">Unavailable</span>
+                  )}
                 </button>
               );
             })}
