@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import HeroSection from "../components/HeroSection";
 import CategorySelector from "../components/CategorySelector";
 import TurfCard from "../components/TurfCard";
-import BookingPanel from "../components/BookingPanel";
 import TurfQuickViewModal from "../components/TurfQuickViewModal";
 import Toast from "../components/Toast";
 import { fetchTurfs } from "../services/api";
@@ -253,11 +252,6 @@ function Home() {
           </div>
         </div>
       </section>
-
-      {/* RIGHT COLUMN: FEATURED TURF BOOKING PANEL */}
-      <aside className="home-side-panel">
-        <BookingPanel turf={selectedTurf} />
-      </aside>
     </div>
   );
 }
