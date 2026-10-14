@@ -31,27 +31,11 @@
       "dest": "backend/config/wsgi.py"
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "/frontend/assets/$1"
-    },
-    {
-      "src": "/favicon.svg",
-      "dest": "/frontend/favicon.svg"
-    },
-    {
-      "src": "/icons.svg",
-      "dest": "/frontend/icons.svg"
-    },
-    {
-      "src": "/(.*\\.(?:ico|png|jpg|jpeg|svg|webp|json|js|css|woff|woff2|ttf|eot))",
-      "dest": "/frontend/$1"
-    },
-    {
       "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/index.html"
+      "dest": "/index.html"
     }
   ]
 }

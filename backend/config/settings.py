@@ -41,11 +41,20 @@ ALLOWED_HOSTS = ['*'] if DEBUG else [
 if not DEBUG and '.vercel.app' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('.vercel.app')
 
+vercel_url = os.getenv('VERCEL_URL')
+if vercel_url and vercel_url not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(vercel_url)
+
 csrf_trusted = os.getenv('CSRF_TRUSTED_ORIGINS', '')
 if csrf_trusted:
     CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_trusted.split(',') if origin.strip()]
 else:
     CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
+
+if vercel_url:
+    trusted_vercel_url = f"https://{vercel_url}"
+    if trusted_vercel_url not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(trusted_vercel_url)
 
 
 STATIC_URL = 'static/'
