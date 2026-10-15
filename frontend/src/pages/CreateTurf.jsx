@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../services/api.js";
 import "./CreateTurf.css";
 
 function CreateTurf() {
@@ -60,7 +61,7 @@ function CreateTurf() {
       imageData.append("images", image);
     });
 
-    const response = await fetch(`http://127.0.0.1:8000/api/turfs/${turfId}/images/`, {
+    const response = await fetch(`${API_BASE_URL}/turfs/${turfId}/images/`, {
       method: "POST",
       headers: {
         Authorization: `Token ${token}`,
@@ -93,7 +94,7 @@ function CreateTurf() {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Please login first.");
 
-      const response = await fetch("http://127.0.0.1:8000/api/owner/turfs/", {
+      const response = await fetch(`${API_BASE_URL}/owner/turfs/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

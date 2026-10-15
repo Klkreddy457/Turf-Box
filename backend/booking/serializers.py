@@ -6,8 +6,16 @@ from django.contrib.auth.hashers import check_password
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
-        write_only = True,
-        min_length = 8
+        write_only=True,
+        min_length=8,
+        error_messages={
+            'min_length': 'Password must be at least 8 characters long.',
+            'required': 'Password is required.',
+        }
+    )
+    role = serializers.CharField(
+        required=False,
+        default='customer'
     )
 
     class Meta:
@@ -19,24 +27,57 @@ class RegisterSerializer(serializers.ModelSerializer):
             'password',
             'role',
         ]
-    
+        extra_kwargs = {
+            'name': {'required': True, 'allow_blank': False},
+            'email': {'required': True, 'allow_blank': False},
+        }
+
+    def validate_name(self, value):
+        if not value or not str(value).strip():
+            raise serializers.ValidationError('Full name is required.')
+        return str(value).strip()
+
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
+        if not value or not str(value).strip():
+            raise serializers.ValidationError('Email address is required.')
+        normalized = str(value).strip().lower()
+        if User.objects.filter(email__iexact=normalized).exists():
             raise serializers.ValidationError(
                 'A user with this email already exists.'
             )
-        return value
+        return normalized
 
     def validate_phone(self, value):
-        if value and User.objects.filter(phone=value).exists():
+        if not value or not str(value).strip():
+            return None
+        cleaned = str(value).strip()
+        if User.objects.filter(phone=cleaned).exists():
             raise serializers.ValidationError(
                 'A user with this phone number already exists.'
             )
-        return value
-    
+        return cleaned
+
+    def validate_role(self, value):
+        if not value:
+            return 'customer'
+        role = str(value).strip().lower()
+        if role == 'admin':
+            raise serializers.ValidationError(
+                'Registration as admin is not permitted.'
+            )
+        if role not in ['customer', 'owner']:
+            raise serializers.ValidationError(
+                'Account type must be either Customer or Owner.'
+            )
+        return role
+
     def create(self, validated_data):
         password = validated_data.pop('password')
         validated_data['password_hash'] = make_password(password)
+        if not validated_data.get('phone'):
+            validated_data['phone'] = None
+        if not validated_data.get('role'):
+            validated_data['role'] = 'customer'
         return User.objects.create(**validated_data) 
 
 class TurfImageSerializer(serializers.ModelSerializer):

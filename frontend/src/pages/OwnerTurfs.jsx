@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE_URL } from "../services/api.js";
 
 function OwnerTurfs() {
     const [turfs, setTurfs] = useState([]);
@@ -19,7 +20,7 @@ function OwnerTurfs() {
             }
 
             const response = await fetch(
-                "http://127.0.0.1:8000/api/owner/turfs/",
+                `${API_BASE_URL}/owner/turfs/`,
                 {
                     method: "GET",
                     headers: {
@@ -57,7 +58,7 @@ function OwnerTurfs() {
             const token = localStorage.getItem("token");
 
             const response = await fetch(
-                `http://127.0.0.1:8000/api/turfs/${turfId}/deactivate/`,
+                `${API_BASE_URL}/turfs/${turfId}/deactivate/`,
                 {
                     method: "PATCH",
                     headers: {
@@ -91,7 +92,7 @@ function OwnerTurfs() {
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-            `http://127.0.0.1:8000/api/turfs/${turfId}/reactivate/`,
+            `${API_BASE_URL}/turfs/${turfId}/reactivate/`,
             {
                 method: "PATCH",
                 headers: {

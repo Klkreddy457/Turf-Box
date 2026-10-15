@@ -1,16 +1,24 @@
 import { DEFAULT_TURFS } from "../data/defaultTurfs.js";
 
-const API_BASE_URL =
+const rawApiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? "http://127.0.0.1:8000/api" : "/api");
+  (import.meta.env.DEV ? "http://127.0.0.1:8000/api" : "https://turf-box.vercel.app/api");
+
+export const API_BASE_URL = rawApiBaseUrl.replace(/\/+$/, "");
 
 export function getMediaUrl(url) {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  const backendHost = import.meta.env.DEV ? "http://127.0.0.1:8000" : "";
+  let backendHost = "";
+  try {
+    const parsed = new URL(API_BASE_URL.startsWith("http") ? API_BASE_URL : window.location.origin);
+    backendHost = parsed.origin;
+  } catch {
+    backendHost = import.meta.env.DEV ? "http://127.0.0.1:8000" : "https://turf-box.vercel.app";
+  }
   if (url.startsWith("/media/")) return `${backendHost}${url}`;
   if (url.startsWith("media/")) return `${backendHost}/${url}`;
-  return url;
+  return `${backendHost}/${url}`;
 }
 
 function getHeaders(isAuthRequired = false) {
@@ -39,13 +47,26 @@ function saveLocalBookings(bookings) {
   localStorage.setItem("turfbox_local_bookings", JSON.stringify(bookings));
 }
 
+async function safeJson(res) {
+  if (!res) return null;
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    try {
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export async function fetchTurfs(params = {}) {
   try {
     const query = new URLSearchParams(params).toString();
     const url = `${API_BASE_URL}/turfs/${query ? `?${query}` : ""}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
     if (res.ok) {
-      const data = await res.json();
+      const data = await safeJson(res);
       if (Array.isArray(data) && data.length > 0) {
         return data;
       }
@@ -87,10 +108,11 @@ export async function fetchTurfs(params = {}) {
 export async function fetchTurfById(turfId) {
   try {
     const res = await fetch(`${API_BASE_URL}/turfs/${turfId}/`, {
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(6000),
     });
     if (res.ok) {
-      return await res.json();
+      const data = await safeJson(res);
+      if (data) return data;
     }
   } catch (err) {
     console.warn("API turf detail fetch failed, utilizing default data:", err);
@@ -104,10 +126,10 @@ export async function fetchTurfById(turfId) {
 export async function fetchTurfAvailability(turfId, dateStr) {
   try {
     const res = await fetch(`${API_BASE_URL}/turfs/${turfId}/availability/?date=${dateStr}`, {
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(6000),
     });
     if (res.ok) {
-      const data = await res.json();
+      const data = await safeJson(res);
       if (data && Array.isArray(data.slots) && data.slots.length > 0) {
         return {
           ...data,
@@ -216,10 +238,12 @@ export async function createBooking({ turf_id, booking_date, start_time, end_tim
         start_time,
         end_time,
       }),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(6000),
     });
-    const data = await res.json();
-    if (res.ok) return data;
+    if (res.ok) {
+      const data = await safeJson(res);
+      if (data) return data;
+    }
   } catch (err) {
     console.warn("Remote booking creation failed, using local offline storage:", err);
   }
@@ -258,12 +282,14 @@ export async function fetchMyBookings() {
   try {
     const res = await fetch(`${API_BASE_URL}/my-bookings/`, {
       headers: getHeaders(true),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(6000),
     });
     if (res.ok) {
-      const data = await res.json();
-      const local = getLocalBookings();
-      return [...data, ...local];
+      const data = await safeJson(res);
+      if (data && Array.isArray(data)) {
+        const local = getLocalBookings();
+        return [...data, ...local];
+      }
     }
   } catch (err) {
     console.warn("Remote my-bookings failed, using local bookings:", err);
@@ -277,9 +303,12 @@ export async function cancelBooking(bookingId) {
     const res = await fetch(`${API_BASE_URL}/bookings/${bookingId}/cancel/`, {
       method: "PATCH",
       headers: getHeaders(true),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(6000),
     });
-    if (res.ok) return await res.json();
+    if (res.ok) {
+      const data = await safeJson(res);
+      if (data) return data;
+    }
   } catch (err) {
     console.warn("Remote cancel booking failed:", err);
   }
@@ -298,9 +327,12 @@ export async function createPaymentOrder(bookingId) {
       method: "POST",
       headers: getHeaders(true),
       body: JSON.stringify({ booking_id: bookingId }),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(6000),
     });
-    if (res.ok) return await res.json();
+    if (res.ok) {
+      const data = await safeJson(res);
+      if (data) return data;
+    }
   } catch (err) {
     console.warn("Remote payment order creation failed:", err);
   }
@@ -319,9 +351,12 @@ export async function verifyPayment(payload) {
       method: "POST",
       headers: getHeaders(true),
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(6000),
     });
-    if (res.ok) return await res.json();
+    if (res.ok) {
+      const data = await safeJson(res);
+      if (data) return data;
+    }
   } catch (err) {
     console.warn("Remote payment verify failed:", err);
   }
@@ -329,53 +364,110 @@ export async function verifyPayment(payload) {
   return { status: "SUCCESS", message: "Payment verified successfully" };
 }
 
+async function parseResponseJson(res, defaultErrorMessage = "Request failed") {
+  const contentType = res.headers.get("content-type") || "";
+  let data = null;
+
+  if (contentType.includes("application/json")) {
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
+  } else {
+    const text = await res.text().catch(() => "");
+    if (import.meta.env.DEV) {
+      console.warn("Non-JSON API response received:", res.status, text.slice(0, 150));
+    }
+  }
+
+  if (res.ok && data) {
+    return data;
+  }
+
+  let errorMessage = defaultErrorMessage;
+  if (data) {
+    if (typeof data.error === "string") {
+      errorMessage = data.error;
+    } else if (typeof data.detail === "string") {
+      errorMessage = data.detail;
+    } else if (typeof data.message === "string") {
+      errorMessage = data.message;
+    } else if (data.email && Array.isArray(data.email)) {
+      errorMessage = data.email[0];
+    } else if (data.phone && Array.isArray(data.phone)) {
+      errorMessage = data.phone[0];
+    } else if (data.password && Array.isArray(data.password)) {
+      errorMessage = data.password[0];
+    } else if (data.role && Array.isArray(data.role)) {
+      errorMessage = data.role[0];
+    } else if (data.non_field_errors && Array.isArray(data.non_field_errors)) {
+      errorMessage = data.non_field_errors[0];
+    } else if (typeof data === "object") {
+      const firstKey = Object.keys(data)[0];
+      const val = data[firstKey];
+      errorMessage = Array.isArray(val) ? `${val[0]}` : String(val);
+    }
+  } else if (res.status === 404) {
+    errorMessage = "API endpoint was not found (404). Please verify backend routing.";
+  } else if (res.status === 405) {
+    errorMessage = "HTTP method not allowed (405).";
+  } else if (res.status === 403) {
+    errorMessage = "Access forbidden (403).";
+  } else if (res.status >= 500) {
+    errorMessage = "Server or database error (500). Please try again in a few moments.";
+  }
+
+  throw new Error(errorMessage);
+}
+
 export async function loginUser(email, password) {
+  let res;
   try {
-    const res = await fetch(`${API_BASE_URL}/login/`, {
+    res = await fetch(`${API_BASE_URL}/login/`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ email, password }),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(10000),
     });
-    const data = await res.json();
-    if (res.ok) return data;
-    throw new Error(data.error || data.detail || "Login failed");
-  } catch (err) {
-    if (err.message && err.message !== "Failed to fetch") throw err;
-    // Offline / Demo account login fallback
-    const mockUser = {
-      id: 99,
-      name: email.split("@")[0].replace(".", " "),
-      email,
-      role: email.includes("owner") ? "owner" : "customer",
-    };
-    const mockToken = "demo_token_" + Date.now();
-    return { token: mockToken, user: mockUser };
+  } catch (netErr) {
+    if (netErr.name === "TimeoutError" || netErr.name === "AbortError") {
+      throw new Error("Login request timed out. Please check your internet connection.");
+    }
+    if (import.meta.env.DEV) {
+      console.warn("Dev mode: server unreachable, utilizing offline demo account");
+      const mockUser = {
+        id: 99,
+        name: email.split("@")[0].replace(".", " "),
+        email,
+        role: email.includes("owner") ? "owner" : "customer",
+      };
+      const mockToken = "demo_token_" + Date.now();
+      return { token: mockToken, user: mockUser };
+    }
+    throw new Error("Unable to connect to the server. Please verify your network connection.");
   }
+
+  return await parseResponseJson(res, "Login failed");
 }
 
 export async function registerUser(userData) {
+  let res;
   try {
-    const res = await fetch(`${API_BASE_URL}/register/`, {
+    res = await fetch(`${API_BASE_URL}/register/`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(userData),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(10000),
     });
-    const data = await res.json();
-    if (res.ok) return data;
-    throw new Error(data.error || data.detail || "Registration failed");
-  } catch (err) {
-    if (err.message && err.message !== "Failed to fetch") throw err;
-    const mockUser = {
-      id: 100,
-      name: userData.name,
-      email: userData.email,
-      role: userData.role || "customer",
-    };
-    const mockToken = "demo_token_" + Date.now();
-    return { token: mockToken, user: mockUser };
+  } catch (netErr) {
+    if (netErr.name === "TimeoutError" || netErr.name === "AbortError") {
+      throw new Error("Registration request timed out. Please check your internet connection.");
+    }
+    throw new Error("Unable to connect to the server. Please verify your network connection.");
   }
+
+  return await parseResponseJson(res, "Registration failed");
 }
 
 export async function fetchCurrentUser() {
@@ -384,9 +476,12 @@ export async function fetchCurrentUser() {
   try {
     const res = await fetch(`${API_BASE_URL}/me/`, {
       headers: getHeaders(true),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(6000),
     });
-    if (res.ok) return await res.json();
+    if (res.ok) {
+      const data = await safeJson(res);
+      if (data) return data;
+    }
   } catch {
     // Return cached user from localStorage
   }

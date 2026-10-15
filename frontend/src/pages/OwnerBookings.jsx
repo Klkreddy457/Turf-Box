@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "../services/api.js";
 
 function OwnerBookings() {
   const [bookings, setBookings] = useState([]);
@@ -15,7 +16,7 @@ function OwnerBookings() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/owner/bookings/",
+        `${API_BASE_URL}/owner/bookings/`,
         {
           method: "GET",
           headers: {
@@ -46,7 +47,7 @@ async function updateBookingStatus(bookingId, status) {
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-            `http://127.0.0.1:8000/api/owner/bookings/${bookingId}/status/`,
+            `${API_BASE_URL}/owner/bookings/${bookingId}/status/`,
             {
                 method: "PATCH",
                 headers: {

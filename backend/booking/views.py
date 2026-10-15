@@ -18,6 +18,10 @@ from .serializers import (
 from .authentication import CustomTokenAuthentication
 from datetime import datetime, timedelta, date
 import secrets
+import logging
+from django.core.exceptions import ValidationError
+
+logger = logging.getLogger(__name__)
 from django.db import transaction
 from django.db.models import Sum
 import razorpay
@@ -442,164 +446,174 @@ def verify_payment(request):
 
 @api_view(['GET', 'POST'])
 def turf_list(request):
+    try:
 
-    if request.method == 'GET':
+        if request.method == 'GET':
 
-        turfs = TurfGround.objects.filter(
-            is_active=True
-        )
-
-        location = request.query_params.get('location')
-        min_price = request.query_params.get('min_price')
-        max_price = request.query_params.get('max_price')
-        date_string = request.query_params.get('date')
-
-        if location:
-            turfs = turfs.filter(
-                location__icontains=location
+            turfs = TurfGround.objects.filter(
+                is_active=True
             )
 
-        if min_price:
-            try:
+            location = request.query_params.get('location')
+            min_price = request.query_params.get('min_price')
+            max_price = request.query_params.get('max_price')
+            date_string = request.query_params.get('date')
+
+            if location:
                 turfs = turfs.filter(
-                    price_per_hour__gte=min_price
-                )
-            except (ValueError, TypeError):
-                return Response(
-                    {
-                        'error': 'min_price must be a valid number'
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
+                    location__icontains=location
                 )
 
-        if max_price:
-            try:
-                turfs = turfs.filter(
-                    price_per_hour__lte=max_price
-                )
-            except (ValueError, TypeError):
-                return Response(
-                    {
-                        'error': 'max_price must be a valid number'
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        if date_string:
-            try:
-                booking_date = datetime.strptime(
-                    date_string,
-                    '%Y-%m-%d'
-                ).date()
-            except ValueError:
-                return Response(
-                    {
-                        'error': 'Invalid date format. Use YYYY-MM-DD.'
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        turfs = turfs.order_by(
-            'price_per_hour'
-        )
-
-        serializer = TurfGroundSerializer(
-            turfs,
-            many=True
-        )
-
-        response_data = serializer.data
-
-        if date_string:
-
-            for turf_data in response_data:
-
-                turf = TurfGround.objects.get(
-                    id=turf_data['id']
-                )
-
-                bookings = Booking.objects.filter(
-                    turf_id=turf.id,
-                    booking_date=booking_date
-                ).exclude(
-                    status='CANCELLED'
-                )
-
-                current_time = datetime.combine(
-                    booking_date,
-                    turf.opening_time
-                )
-
-                closing_datetime = datetime.combine(
-                    booking_date,
-                    turf.closing_time
-                )
-
-                available_slots = 0
-
-                while current_time < closing_datetime:
-
-                    slot_end = (
-                        current_time +
-                        timedelta(hours=1)
+            if min_price:
+                try:
+                    turfs = turfs.filter(
+                        price_per_hour__gte=min_price
+                    )
+                except (ValueError, TypeError, ValidationError):
+                    return Response(
+                        {
+                            'error': 'min_price must be a valid number'
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
                     )
 
-                    if slot_end > closing_datetime:
-                        break
+            if max_price:
+                try:
+                    turfs = turfs.filter(
+                        price_per_hour__lte=max_price
+                    )
+                except (ValueError, TypeError, ValidationError):
+                    return Response(
+                        {
+                            'error': 'max_price must be a valid number'
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
 
-                    slot_start_time = current_time.time()
-                    slot_end_time = slot_end.time()
+            if date_string:
+                try:
+                    booking_date = datetime.strptime(
+                        date_string,
+                        '%Y-%m-%d'
+                    ).date()
+                except ValueError:
+                    return Response(
+                        {
+                            'error': 'Invalid date format. Use YYYY-MM-DD.'
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
 
-                    overlap = bookings.filter(
-                        start_time__lt=slot_end_time,
-                        end_time__gt=slot_start_time
-                    ).exists()
+            turfs = turfs.order_by(
+                'price_per_hour'
+            )
 
-                    if not overlap:
-                        available_slots += 1
+            serializer = TurfGroundSerializer(
+                turfs,
+                many=True
+            )
 
-                    current_time = slot_end
+            response_data = serializer.data
 
-                turf_data['available_slots'] = available_slots
+            if date_string:
 
-        return Response(response_data)
+                for turf_data in response_data:
 
-    if request.method == 'POST':
+                    turf = TurfGround.objects.get(
+                        id=turf_data['id']
+                    )
 
-        if not request.user.is_authenticated:
+                    bookings = Booking.objects.filter(
+                        turf_id=turf.id,
+                        booking_date=booking_date
+                    ).exclude(
+                        status='CANCELLED'
+                    )
+
+                    current_time = datetime.combine(
+                        booking_date,
+                        turf.opening_time
+                    )
+
+                    closing_datetime = datetime.combine(
+                        booking_date,
+                        turf.closing_time
+                    )
+
+                    available_slots = 0
+
+                    while current_time < closing_datetime:
+
+                        slot_end = (
+                            current_time +
+                            timedelta(hours=1)
+                        )
+
+                        if slot_end > closing_datetime:
+                            break
+
+                        slot_start_time = current_time.time()
+                        slot_end_time = slot_end.time()
+
+                        overlap = bookings.filter(
+                            start_time__lt=slot_end_time,
+                            end_time__gt=slot_start_time
+                        ).exists()
+
+                        if not overlap:
+                            available_slots += 1
+
+                        current_time = slot_end
+
+                    turf_data['available_slots'] = available_slots
+
+            return Response(response_data)
+
+        if request.method == 'POST':
+
+            if not request.user.is_authenticated:
+                return Response(
+                    {
+                        'error': 'Authentication required'
+                    },
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
+            if request.user.role not in ['owner', 'admin']:
+                return Response(
+                    {
+                        'error': 'Only owners and admins can  turfs'
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            serializer = TurfGroundSerializer(
+                data=request.data
+            )
+
+            if serializer.is_valid():
+
+                turf = serializer.save(
+                    owner=request.user
+                )
+
+                return Response(
+                    TurfGroundSerializer(turf).data,
+                    status=status.HTTP_201_CREATED
+                )
+
             return Response(
-                {
-                    'error': 'Authentication required'
-                },
-                status=status.HTTP_401_UNAUTHORIZED
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
             )
-
-        if request.user.role not in ['owner', 'admin']:
-            return Response(
-                {
-                    'error': 'Only owners and admins can  turfs'
-                },
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        serializer = TurfGroundSerializer(
-            data=request.data
-        )
-
-        if serializer.is_valid():
-
-            turf = serializer.save(
-                owner=request.user
-            )
-
-            return Response(
-                TurfGroundSerializer(turf).data,
-                status=status.HTTP_201_CREATED
-            )
-
+    except Exception as error:
+        logger.error(f"Error in turf_list: {error}", exc_info=True)
         return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
+            {
+                "error": "Failed to retrieve turfs. Database may be temporarily unavailable.",
+                "detail": str(error),
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 @api_view(['GET', 'POST'])
@@ -1430,29 +1444,54 @@ def reactivate_turf(request, turf_id):
 
 @api_view(['POST'])
 def register_user(request):
-    serializer = RegisterSerializer(data=request.data)
+    try:
+        serializer = RegisterSerializer(data=request.data)
 
-    if serializer.is_valid():
-        user = serializer.save()
+        if serializer.is_valid():
+            user = serializer.save()
+
+            return Response(
+                {
+                    'message': 'User registered successfully',
+                    'user': {
+                        'id': user.id,
+                        'name': user.name,
+                        'email': user.email,
+                        'phone': user.phone,
+                        'role': user.role,
+                    }
+                },
+                status=status.HTTP_201_CREATED
+            )
+
+        first_error = None
+        for field, errors in serializer.errors.items():
+            if isinstance(errors, list) and len(errors) > 0:
+                first_error = str(errors[0])
+                break
+            elif isinstance(errors, str):
+                first_error = errors
+                break
+
+        response_data = {
+            'error': first_error or 'Validation failed',
+            'detail': first_error or 'Validation failed',
+            **serializer.errors,
+        }
 
         return Response(
-            {
-                'message': 'User registered successfully',
-                'user': {
-                    'id': user.id,
-                    'name': user.name,
-                    'email': user.email,
-                    'phone': user.phone,
-                    'role': user.role,
-                }
-            },
-            status=status.HTTP_201_CREATED
+            response_data,
+            status=status.HTTP_400_BAD_REQUEST
         )
-
-    return Response(
-        serializer.errors,
-        status=status.HTTP_400_BAD_REQUEST
-    )
+    except Exception as e:
+        logger.error(f"Unexpected error in register_user: {e}", exc_info=True)
+        return Response(
+            {
+                'error': 'A database or server error occurred. Please try again later.',
+                'detail': 'A database or server error occurred. Please try again later.',
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 @api_view(['POST'])
 def login_user(request):

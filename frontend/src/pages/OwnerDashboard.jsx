@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE_URL } from "../services/api.js";
 
 function OwnerDashboard() {
 
@@ -30,7 +31,7 @@ function OwnerDashboard() {
             };
 
             const dashboardResponse = await fetch(
-                "http://127.0.0.1:8000/api/owner/dashboard/",
+                `${API_BASE_URL}/owner/dashboard/`,
                 {
                     method: "GET",
                     headers,
@@ -50,7 +51,7 @@ function OwnerDashboard() {
             setDashboard(dashboardData);
 
             const bookingsResponse = await fetch(
-                "http://127.0.0.1:8000/api/owner/bookings/",
+                `${API_BASE_URL}/owner/bookings/`,
                 {
                     method: "GET",
                     headers,
@@ -91,7 +92,7 @@ function OwnerDashboard() {
             const token = localStorage.getItem("token");
 
             const response = await fetch(
-                `http://127.0.0.1:8000/api/owner/bookings/${bookingId}/status/`,
+                `${API_BASE_URL}/owner/bookings/${bookingId}/status/`,
                 {
                     method: "PATCH",
                     headers: {

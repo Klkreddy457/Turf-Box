@@ -122,6 +122,72 @@ class AccountAuthenticationTests(BaseTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("email", response.json())
 
+    def test_user_registration_owner_success(self):
+        payload = {
+            "name": "New Owner User",
+            "email": "newowner@example.com",
+            "phone": "9998887774",
+            "password": "securepassword123",
+            "role": "owner",
+        }
+        response = self.client.post("/api/register/", payload, content_type="application/json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["user"]["role"], "owner")
+
+    def test_user_registration_missing_fields(self):
+        # Missing email and password
+        payload = {"name": "Incomplete User"}
+        response = self.client.post("/api/register/", payload, content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertTrue("email" in data or "error" in data)
+
+    def test_user_registration_password_too_short(self):
+        payload = {
+            "name": "Short Password",
+            "email": "shortpw@example.com",
+            "password": "short",
+            "role": "customer",
+        }
+        response = self.client.post("/api/register/", payload, content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("password", response.json())
+
+    def test_user_registration_invalid_role(self):
+        payload = {
+            "name": "Invalid Role User",
+            "email": "invalidrole@example.com",
+            "password": "securepassword123",
+            "role": "superman",
+        }
+        response = self.client.post("/api/register/", payload, content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("role", response.json())
+
+    def test_user_registration_admin_role_rejected(self):
+        payload = {
+            "name": "Sneaky Admin",
+            "email": "sneakyadmin@example.com",
+            "password": "securepassword123",
+            "role": "admin",
+        }
+        response = self.client.post("/api/register/", payload, content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("role", response.json())
+
+    def test_user_registration_database_error_handled(self):
+        payload = {
+            "name": "Db Crash User",
+            "email": "dbcrash@example.com",
+            "password": "securepassword123",
+            "role": "customer",
+        }
+        with patch("booking.serializers.RegisterSerializer.save", side_effect=Exception("Database connection timed out")):
+            response = self.client.post("/api/register/", payload, content_type="application/json")
+            self.assertEqual(response.status_code, 500)
+            self.assertIn("error", response.json())
+            self.assertNotIn("Database connection timed out", response.json()["error"])
+
     def test_user_login_success(self):
         payload = {
             "email": "customer@example.com",

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE_URL } from "../services/api.js";
 
 function EditTurf() {
     const { turfId } = useParams();
@@ -26,7 +27,7 @@ function EditTurf() {
     async function fetchTurf() {
         try {
             const response = await fetch(
-                `http://127.0.0.1:8000/api/turfs/${turfId}/`
+                `${API_BASE_URL}/turfs/${turfId}/`
             );
 
             const data = await response.json();
@@ -76,7 +77,7 @@ function EditTurf() {
             }
 
             const response = await fetch(
-                `http://127.0.0.1:8000/api/turfs/${turfId}/`,
+                `${API_BASE_URL}/turfs/${turfId}/`,
                 {
                     method: "PATCH",
                     headers: {
