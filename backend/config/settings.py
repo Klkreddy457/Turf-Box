@@ -112,14 +112,47 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
+db_url = os.getenv('DATABASE_URL') or os.getenv('MYSQL_URL')
+if db_url:
+    from urllib.parse import urlparse, unquote, parse_qs
+    parsed_db = urlparse(db_url)
+    db_name = parsed_db.path.lstrip('/')
+    db_user = unquote(parsed_db.username) if parsed_db.username else ''
+    db_password = unquote(parsed_db.password) if parsed_db.password else ''
+    db_host = parsed_db.hostname or '127.0.0.1'
+    db_port = str(parsed_db.port) if parsed_db.port else '3306'
+    query_params = parse_qs(parsed_db.query)
+    ssl_param = query_params.get('ssl-mode', [None])[0] or query_params.get('sslmode', [None])[0]
+else:
+    db_name = os.getenv('DB_NAME') or os.getenv('MYSQL_DATABASE') or os.getenv('MYSQLDATABASE') or 'turfbox'
+    db_user = os.getenv('DB_USER') or os.getenv('MYSQL_USER') or os.getenv('MYSQLUSER') or 'root'
+    db_password = os.getenv('DB_PASSWORD') or os.getenv('MYSQL_PASSWORD') or os.getenv('MYSQLPASSWORD') or '1234'
+    db_host = os.getenv('DB_HOST') or os.getenv('MYSQL_HOST') or os.getenv('MYSQLHOST') or '127.0.0.1'
+    db_port = os.getenv('DB_PORT') or os.getenv('MYSQL_PORT') or os.getenv('MYSQLPORT') or '3306'
+    ssl_param = None
+
+db_options = {
+    'charset': 'utf8mb4',
+}
+
+enable_ssl = (
+    os.getenv('DB_SSL', '').lower() in ('true', '1', 'required')
+    or os.getenv('MYSQL_SSL', '').lower() in ('true', '1', 'required')
+    or (ssl_param and ssl_param.upper() in ('REQUIRED', 'VERIFY-CA', 'VERIFY-FULL'))
+    or (is_vercel and db_host not in ('127.0.0.1', 'localhost'))
+)
+if enable_ssl:
+    db_options['ssl'] = {'ssl_mode': 'REQUIRED'}
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'turfbox'),
-        'USER': os.getenv('DB_USER', 'root'),
-        'PASSWORD': os.getenv('DB_PASSWORD', '1234'),
-        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
-        'PORT': os.getenv('DB_PORT', '3306'),
+        'NAME': db_name,
+        'USER': db_user,
+        'PASSWORD': db_password,
+        'HOST': db_host,
+        'PORT': db_port,
+        'OPTIONS': db_options,
     }
 }
 

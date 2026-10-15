@@ -611,7 +611,7 @@ def turf_list(request):
         return Response(
             {
                 "error": "Failed to retrieve turfs. Database may be temporarily unavailable.",
-                "detail": str(error),
+                "detail": "Failed to retrieve turfs. Database may be temporarily unavailable.",
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
