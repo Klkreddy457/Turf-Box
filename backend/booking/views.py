@@ -234,17 +234,14 @@ def create_payment_order(request):
         })
 
 
-    except Exception as error:
-
+    
+    except Exception:
+        logger.exception("Payment order creation failed")
         return Response(
-
-            {
-                'error': str(error)
-            },
-
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-
+            {"error": "Payment order creation failed. Check server logs."},
+            status=500
         )
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
